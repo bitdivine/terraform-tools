@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const cp = require('child_process');
+
+function loadTf(path) {
+	return new Promise((yay, nay) => {
+		try {
+			const parser = cp.execFile('json2hcl', ['-reverse'], (err, stdout, stderr) => (err === null)?yay(JSON.parse(stdout)):nay(stderr));
+			fs.createReadStream(path, {encoding: 'utf8'}).pipe(parser.stdin);
+		} catch(e) {
+			nay(e);
+		}
+	});
+
+}
+
+function getFile(tfPath, dir) {
+	return new Promise((yay, nay) => {
+		tfPath = Array.isArray(tfPath)?tfPath:tfPath.split(".");
+		dir = dir || process.cwd();
+		loadTf(`${dir}/main.tf`).then(main => {
+			while(true){
+				if (Array.isArray(main)) {
+					main = main.reduce((d,n) => Object.assign(d,n), {});
+				}
+				if (main[tfPath[0]] !== undefined) main = main[tfPath.shift()];
+				else break;
+			}
+			if (tfPath.length === 0) {
+				yay({dir});
+			} else {
+				const source = main.source;
+				if (source === undefined) {
+					yay({dir, tfPath});
+				} else {
+					if (source[0] === '/') {
+						dir = source;
+					} else {
+						dir = dir + '/' + source;
+					}
+					getFile(tfPath, dir).then(yay);
+				}
+			}
+		})
+	});
+}
+
+getFile(process.argv[2]).then(ans => fs.promises.realpath(ans.dir).then(dir => (ans.dir = dir, ans))).then(console.log);
