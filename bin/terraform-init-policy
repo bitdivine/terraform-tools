@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+const fs = require('fs');
+const { execFileSync } = require('child_process');
+const policy_arn = process.argv[2];
+const new_name = process.argv[3];
+
+const policy_data = JSON.parse(execFileSync('aws', ['iam', 'get-policy', '--policy-arn', policy_arn]));
+const policy_version = policy_data.Policy.DefaultVersionId;
+const policy_document = JSON.parse(execFileSync('aws', ['iam', 'get-policy-version', '--policy-arn', policy_arn, '--version-id', policy_version])).PolicyVersion.Document
+const policy = new_name || policy_data.Policy.PolicyName;
+const policy_ = policy.replace(/[-]/g,"_");
+
+const main =`###############################################################################
+###
+##
+#
+
+###############################################################################
+### POLICIES
+###############################################################################
+
+resource "aws_iam_policy" "${policy_}" {
+  name = "${policy}"
+  description = ${JSON.stringify(policy_data.Policy.Description)}
+  path = ${JSON.stringify(policy_data.Policy.Path)}
+  policy = "\${data.template_file.${policy_}.rendered}"
+}
+data "template_file" "${policy_}" {
+  template = "\${file("\${path.module}/template.json")}"
+  vars {}
+}
+`;
+
+const output = `output "arn" {
+  value = "\${aws_iam_policy.${policy_}.arn}"
+}
+`;
+
+fs.writeFileSync("main.tf", main, {encoding: 'utf-8'});
+fs.writeFileSync("template.json", JSON.stringify(policy_document, null, 2), {encoding: 'utf-8'})
+fs.writeFileSync("outputs.tf", output, {encoding: 'utf-8'});
