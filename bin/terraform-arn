@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+const fs = require('fs');
+const tm = require('tree-math');
+const state = JSON.parse(fs.readFileSync('./terraform.tfstate', {encoding: 'utf8'}));
+
+function getState(path) {
+	path = Array.isArray(path)? path.slice(): path.split(".");
+	var module_path = ["root"];
+	while (path[0] === 'module') {
+		path.shift();
+		module_path.push(path.shift());
+	}
+	return state.modules.filter(module => module.path.join(".") == module_path.join("."))[0].resources[path.join(".")];
+}
+
+function findArn(blob) {
+	return tm.findReduce(blob,(d,n,p) => d || p[p.length-1]==='arn' && n);
+}
+
+console.log(findArn(getState(process.argv[2])));
