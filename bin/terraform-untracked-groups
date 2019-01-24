@@ -1,0 +1,1 @@
+diff "$@" <(cat terraform.tfstate  | jmespath "modules[*].resources.[values(@)] |[][]|[?type=='aws_iam_group'].primary.attributes.arn" --output text | sort) <(aws iam list-groups --query 'Groups[*].Arn' | jmespath "[*]" --output text | sort)

@@ -1,0 +1,1 @@
+cat terraform.tfstate  | jmespath "modules[*].resources.[values(@)] |[][]|[?type=='aws_iam_policy'].primary.attributes.arn" --output text | sort

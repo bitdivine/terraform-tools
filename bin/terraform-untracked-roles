@@ -1,0 +1,1 @@
+diff "$@" <(cat terraform.tfstate  | jmespath "modules[*].resources.[values(@)] |[][]|[?type=='aws_iam_role'].primary.attributes.arn" --output text | sort) <(aws iam list-roles --query 'Roles[*].Arn' | jmespath "[*]" --output text | sort)

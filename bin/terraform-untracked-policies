@@ -1,0 +1,1 @@
+diff "$@" <(cat terraform.tfstate  | jmespath "modules[*].resources.[values(@)] |[][]|[?type=='aws_iam_policy'].primary.attributes.arn" --output text | sort) <(aws iam list-policies --scope Local --query 'Policies[*].Arn' | jmespath "[*]" --output text | sort)

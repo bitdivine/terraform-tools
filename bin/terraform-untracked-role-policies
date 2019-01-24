@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+const jp = require('jmespath');
+const fs = require('fs');
+const role_policies_in_aws = require(`${process.env.AWSYNC_DATA}/,combined-role-policies.json`).reduce((ans, record) => record.attached_policies.reduce((ans, policy) => (ans.push([policy.link.PolicyArn, record.role.RoleName]), ans), ans), []).map(x => x.join("/"));
+const role_policies_in_terraform = new Set(jp.search(JSON.parse(fs.readFileSync('terraform.tfstate', {encoding: 'utf8'})), "modules[*].resources.[values(@)] |[][]|[?type=='aws_iam_role_policy_attachment'].primary.attributes").map(record => [record.policy_arn, record.role].join('/')));
+
+role_policies_in_aws.filter(x => !role_policies_in_terraform.has(x)).forEach(x => console.log(x));
