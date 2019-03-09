@@ -46,4 +46,4 @@ function getFile(tfPath, dir) {
 	});
 }
 
-getFile(process.argv[2]).then(ans => fs.promises.realpath(ans.dir).then(dir => (ans.dir = dir, ans))).then(console.log);
+getFile(process.argv[2]).then(ans => fs.promises.realpath(ans.dir).then(dir => (ans.dir = dir, ans))).then((ans) => console.log(ans.dir));

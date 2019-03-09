@@ -1,0 +1,7 @@
+set -eux
+terraform init
+terraform validate
+rm -f terraform.plan terraform.plan.json
+terraform plan "${@}" -out terraform.plan
+terraform show -no-color terraform.plan  > terraform.plan-text
+terraform show terraform.plan | landscape
